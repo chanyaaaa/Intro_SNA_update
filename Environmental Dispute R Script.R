@@ -85,6 +85,8 @@ plot.igraph(pta_intercon_net,
 #Difficult to get any insight, I will create two separate networks: bilateral and multilateral
 E(pta_intercon_net)$bilateral <- ifelse(pta_intercon$typememb == 1, 1,0) #add the edge attribute indicating whether the agreement is bilateralater
 pta_bilat_net <- subgraph.edges(pta_intercon_net, which(E(pta_intercon_net)$bilateral == 1)) #subgraph.edges() create a subgraph based on edges' attribute
+E(pta_bilat_net)$year <- pta_intercon$year[which(pta_intercon$typememb == 1)]
+
 set.seed(123)
 plot.igraph(pta_bilat_net,
             vertex.size = 3,
@@ -112,55 +114,96 @@ plot.igraph(env_net,
 
 #III.C: network statistics: density, transitivity, and centrality
 #Density: a network density denotes the proportion of ties over all possible ties in the network
+edge_density(pta_bilat_net)
 edge_density(pta_intercon_net)
 
 #let's try to plot density over the years:
-#first, set an edge value:
-E(pta_intercon_net)$year <- pta_intercon$year
 
 #calculate of the intercontinential network's density by year:
 pta_intercon_density <- c()
+pta_bilat_density <- c()
 
 for(i in 1953:2021){ #all the years available
   pta_intercon_density[i-1952] <- edge_density(subgraph.edges(pta_intercon_net, which(E(pta_intercon_net)$year < i+1)))
+  pta_bilat_density[i-1952] <- edge_density(subgraph.edges(pta_bilat_net, which(E(pta_bilat_net)$year < i+1)))
 }
 
-pta_intercon_density <- as.data.frame(cbind(1953:2021, pta_intercon_density))
-colnames(pta_intercon_density) <- c("year", "density")
+pta_density <- as.data.frame(cbind(1953:2021, pta_intercon_density,pta_bilat_density ))
+colnames(pta_density) <- c("year", "intercon_density", "bilat_density")
 
 #plot density over time
-ggplot(pta_intercon_density, aes(year, density)) +
-  geom_line() + theme_minimal()
+pta_density_melted <- pta_density %>% pivot_longer(!year, names_to = "network", values_to = "density" )
+ggplot(pta_density_melted) +
+  geom_line(aes(year, density, color = network)) +
+  theme_minimal()
 
 #Transitivity: a network transitivity denotes the proportion of connected ties over all possible connected ties in the network
 transitivity(pta_intercon_net)
+transitivity(pta_bilat_net)
 
 pta_intercon_transitivity <- c()
+pta_bilat_transitivity <- c()
 
 for(i in 1953:2021){ #all the years available
   pta_intercon_transitivity[i-1952] <- transitivity(subgraph.edges(pta_intercon_net, which(E(pta_intercon_net)$year < i+1)))
+  pta_bilat_transitivity[i-1952] <- transitivity(subgraph.edges(pta_bilat_net, which(E(pta_bilat_net)$year < i+1)))
 }
 
-pta_intercon_net_attr <- as.data.frame(cbind(1953:2021, pta_intercon_density$density, pta_intercon_transitivity))
-colnames(pta_intercon_net_attr) <- c("year","density", "transitivity")
+pta_transitivity <- as.data.frame(cbind(1953:2021, pta_intercon_transitivity,pta_bilat_transitivity ))
+colnames(pta_transitivity) <- c("year", "intercon_transitivity", "bilat_transitivity")
 
 #plot transitivity over time
-ggplot(pta_intercon_net_attr, aes(year, transitivity)) +
-  geom_line() + scale_x_continuous(breaks = c(1953, 1963, 1971, 1975, 1988, 2021),labels = c(1953, 1963, 1972, 1975,1988, 2021))
+pta_transitivity_melted <- pta_transitivity %>% pivot_longer(!year, names_to = "network", values_to = "transitivity" )
+ggplot(pta_transitivity_melted) +
+  geom_line(aes(year, transitivity, color = network)) +
+  scale_x_continuous(breaks = c(1953, 1963, 1971, 1975, 1988, 2004, 2021),labels = c(1953, 1963, 1972, 1975,1988, 2004, 2021)) +
   theme_minimal()
 
 
 #Centrality: help examine which countries are important nodes in the network
 #degree centrality
-sort(degree(pta_intercon_net), decreasing = T)
+sort(degree(pta_bilat_net), decreasing = T)
 
 #eigenvalue centrality
-sort(eigen_centrality(pta_intercon_net)$vector, decreasing = T)
+sort(eigen_centrality(pta_bilat_net)$vector, decreasing = T)
 
 #this is useful for network visualization:
+V(pta_bilat_net)$shape <- "circle"
+V(pta_bilat_net)$color <- ifelse(eigen_centrality(pta_bilat_net)$vector > 0.5, "red", "yellow")
+set.seed(123)
+plot.igraph(pta_bilat_net,
+            vertex.size = eigen_centrality(pta_bilat_net)$vector*10,
+            vertex.label = V(pta_bilat_net)$name,
+            vertex.label.cex = .5,
+            vertex.frame.color = NA,
+            layout = layout.fruchterman.reingold,
+            main = "Inter-Regional, Bilateral PTAs")
+
+V(env_net)$shape <- "circle"
+plot.igraph(env_net,
+            vertex.size = degree(env_net, mode = "in"),
+            vertex.label = V(env_net)$name,
+            vertex.label.cex = .5,
+            layout = layout.fruchterman.reingold,
+            vertex.frame.color = NA,
+            edge.arrow.size = 0.15,
+            edge.arrow.width = 2,
+            main = "environmental disputes: citation netweork")
+
+#--------------------III. modeling network ergm --------------------
+#first download the package "ergm" 
+install.packages("ergm")
+library(ergm)
+
+#first, we must create an adjacency matrix:
+env_matrix <- as.matrix(get.adjacency(env_net))
+env_net_ergm <- network(evn_matrix)
+env_net.model1 <- ergm(env_net_ergm ~ edges)
+summary(env_net.model1)
+
+env_net.model2 <- ergm(env_net_ergm ~ edges)
 
 
 
 
-#--------------------III. modeling network: ergm --------------------
 
