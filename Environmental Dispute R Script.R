@@ -7,7 +7,6 @@
 library(tidyverse)
 library(igraph)
 library(RColorBrewer)
-library(ggplot2)
 
 #--------------------I. download data--------------------
 #go to https://github.com/chanyaaaa/environmental_dispute for all data
@@ -112,50 +111,81 @@ plot.igraph(env_net,
 
 #what do you notice immediately here?
 
-#III.C: network statistics: density, transitivity, and centrality
-#Density: a network density denotes the proportion of ties over all possible ties in the network
-edge_density(pta_bilat_net)
+#III.C: network statistics: density, transitivity, centrality, component analysis and community detection:
+#In this section, we will work with the whole network:
+pta_net <- cbind(pta_data$country1, pta_data$country2) %>% graph_from_edgelist(directed = F) 
+E(pta_net)$year <- pta_data$year
+E(pta_net)$region <- pta_data$regioncon
+
+#Density: a network density denotes the proportion of ties over all possible ties in the network -- which one do you think is denser?
+edge_density(pta_net)
 edge_density(pta_intercon_net)
 
 #let's try to plot density over the years:
 
-#calculate of the intercontinential network's density by year:
+#calculate of the network's density by year: we will compare different networks based on their regions
+pta_density <- c()
+pta_asia_density <- c()
+pta_africa_density <- c()
 pta_intercon_density <- c()
-pta_bilat_density <- c()
+pta_eu_density <- c()
+pta_america_density <- c()
+pta_oceania_density <- c()
 
-for(i in 1953:2021){ #all the years available
-  pta_intercon_density[i-1952] <- edge_density(subgraph.edges(pta_intercon_net, which(E(pta_intercon_net)$year < i+1)))
-  pta_bilat_density[i-1952] <- edge_density(subgraph.edges(pta_bilat_net, which(E(pta_bilat_net)$year < i+1)))
+for(i in 1948:2021){ #all the years available
+  pta_density[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1)) %>% simplify() %>% edge_density() 
+  pta_asia_density[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Asia")) %>% simplify() %>% edge_density()
+  pta_africa_density[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Africa")) %>% simplify() %>% edge_density()
+  pta_intercon_density[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Intercontinental")) %>% simplify() %>% edge_density()
+  pta_eu_density[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Europe")) %>% simplify() %>% edge_density()
+  pta_america_density[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Americas")) %>% simplify() %>% edge_density()
+  pta_oceania_density[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Oceania")) %>% simplify() %>% edge_density()
 }
 
-pta_density <- as.data.frame(cbind(1953:2021, pta_intercon_density,pta_bilat_density ))
-colnames(pta_density) <- c("year", "intercon_density", "bilat_density")
+pta_density <- as.data.frame(cbind(1948:2021, pta_density, pta_asia_density, 
+                                   pta_africa_density, pta_intercon_density, 
+                                   pta_eu_density, pta_america_density, 
+                                   pta_oceania_density))
+colnames(pta_density) <- c("year", "global", "asia", "africa", "intercontinental", "eu", "america", "oceania")
 
 #plot density over time
-pta_density_melted <- pta_density %>% pivot_longer(!year, names_to = "network", values_to = "density" )
+pta_density_melted <- pta_density %>% pivot_longer(!year, names_to = "region", values_to = "density" )
 ggplot(pta_density_melted) +
-  geom_line(aes(year, density, color = network)) +
+  geom_line(aes(year, density, color = region)) +
   theme_minimal()
 
 #Transitivity: a network transitivity denotes the proportion of connected ties over all possible connected ties in the network
+transitivity(pta_net)
 transitivity(pta_intercon_net)
-transitivity(pta_bilat_net)
 
+pta_transitivity <- c()
+pta_asia_transitivity <- c()
+pta_africa_transitivity <- c()
 pta_intercon_transitivity <- c()
-pta_bilat_transitivity <- c()
+pta_eu_transitivity <- c()
+pta_america_transitivity <- c()
+pta_oceania_transitivity <- c()
 
-for(i in 1953:2021){ #all the years available
-  pta_intercon_transitivity[i-1952] <- transitivity(subgraph.edges(pta_intercon_net, which(E(pta_intercon_net)$year < i+1)))
-  pta_bilat_transitivity[i-1952] <- transitivity(subgraph.edges(pta_bilat_net, which(E(pta_bilat_net)$year < i+1)))
+for(i in 1948:2021){ #all the years available
+  pta_transitivity[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1)) %>% simplify() %>% transitivity() 
+  pta_asia_transitivity[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Asia")) %>% simplify() %>% transitivity() 
+  pta_africa_transitivity[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Africa")) %>% simplify() %>% transitivity() 
+  pta_intercon_transitivity[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Intercontinental")) %>% simplify() %>% transitivity() 
+  pta_eu_transitivity[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Europe")) %>% simplify() %>% transitivity() 
+  pta_america_transitivity[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Americas")) %>% simplify() %>% transitivity() 
+  pta_oceania_transitivity[i-1947] <- pta_net %>% subgraph.edges(which(E(pta_net)$year < i+1 & E(pta_net)$region == "Oceania")) %>% simplify() %>% transitivity() 
 }
 
-pta_transitivity <- as.data.frame(cbind(1953:2021, pta_intercon_transitivity,pta_bilat_transitivity ))
-colnames(pta_transitivity) <- c("year", "intercon_transitivity", "bilat_transitivity")
+pta_transitivity <- as.data.frame(cbind(1948:2021, pta_transitivity, pta_asia_transitivity, 
+                                   pta_africa_transitivity, pta_intercon_transitivity, 
+                                   pta_eu_transitivity, pta_america_transitivity, 
+                                   pta_oceania_transitivity))
+colnames(pta_transitivity) <- c("year", "global", "asia", "africa", "intercontinental", "eu", "america", "oceania")
 
 #plot transitivity over time
-pta_transitivity_melted <- pta_transitivity %>% pivot_longer(!year, names_to = "network", values_to = "transitivity" )
+pta_transitivity_melted <- pta_transitivity %>% pivot_longer(!year, names_to = "region", values_to = "transitivity" )
 ggplot(pta_transitivity_melted) +
-  geom_line(aes(year, transitivity, color = network)) +
+  geom_line(aes(year, transitivity, color = region)) +
   scale_x_continuous(breaks = c(1953, 1963, 1971, 1975, 1988, 2004, 2021),labels = c(1953, 1963, 1972, 1975,1988, 2004, 2021)) +
   theme_minimal()
 
@@ -190,18 +220,57 @@ plot.igraph(env_net,
             edge.arrow.width = 2,
             main = "environmental disputes: citation netweork")
 
-#--------------------III. modeling network ergm --------------------
-#first download the package "ergm" 
-install.packages("ergm")
-library(ergm)
+#Component analysis
+env_component_list <- decompose.graph(env_net)
+V(env_component_list[[1]])$eigen_cen <- eigen_centrality(env_component_list[[1]])$vector
+V(env_component_list[[2]])$eigen_cen <- eigen_centrality(env_component_list[[2]])$vector
 
-#first, we must create an adjacency matrix:
-env_matrix <- as.matrix(get.adjacency(env_net))
-env_net_ergm <- network(evn_matrix)
-env_net.model1 <- ergm(env_net_ergm ~ edges)
-summary(env_net.model1)
+#component 1
+set.seed(123)
+plot(env_component_list[[1]],
+     vertex.size = V(env_component_list[[1]])$eigen_cen*10,
+     vertex.color = "red",
+     vertex.label = V(env_component_list[[1]])$name,
+     vertex.label.cex = 0.5,
+     vertex.frame.color = NA,
+     edge.width = E(env_component_list[[1]])$weight,
+     layout = layout.fruchterman.reingold,
+     edge.arrow.size = 0.15,
+     edge.arrow.width = 2,
+     main = "The network of environmental disputes - Component 1")
+#component 2
+set.seed(123)
+plot(env_component_list[[2]],
+     vertex.size = V(env_component_list[[2]])$eigen_cen*10,
+     vertex.color = "red",
+     vertex.label = V(env_component_list[[2]])$name,
+     vertex.label.cex = 0.5,
+     vertex.frame.color = NA,
+     edge.width = E(env_component_list[[2]])$weight,
+     layout = layout.fruchterman.reingold,
+     edge.arrow.size = 0.15,
+     edge.arrow.width = 2,
+     main = "The network of environmental disputes - Component 1")
 
-env_net.model2 <- ergm(env_net_ergm ~ edges)
+#community detection:
+#walktrap
+env_walktrap <- cluster_walktrap(env_net)
+sort(membership(env_walktrap))
+sizes(env_walktrap)
+modularity(env_walktrap)
+
+#plotting everything together
+set.seed(123)
+plot(env_net,
+     vertex.size = degree(env_net, mode = "in"),
+     vertex.label = V(env_net)$name,
+     vertex.label.cex = 0.5,
+     vertex.frame.color = NA,
+     layout = layout.fruchterman.reingold,
+     edge.arrow.size = 0.15,
+     edge.arrow.width = 2,
+     mark.groups = env_walktrap, #here create the communities in the network
+     main = "Communities of Environmental Dispute Network -- Walktrap")
 
 
 
