@@ -3,13 +3,10 @@
 #Module 5: Social Network Analysis
 #By Chanaya Punyakumpol
 
-#download necessary R packages:
+#--------------------I. download necessary R packages--------------------
 install.packages("tidyverse", "igraph")
 library(tidyverse)
 library(igraph)
-
-#--------------------I. download data--------------------
-#go to https://github.com/chanyaaaa/environmental_dispute for all data
 
 #--------------------II. create the network--------------------
 #two types of network: undirected and directed network
