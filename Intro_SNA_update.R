@@ -4,9 +4,9 @@
 #By Chanaya Punyakumpol
 
 #download necessary R packages:
+install.packages("tidyverse", "igraph")
 library(tidyverse)
 library(igraph)
-library(RColorBrewer)
 
 #--------------------I. download data--------------------
 #go to https://github.com/chanyaaaa/environmental_dispute for all data
