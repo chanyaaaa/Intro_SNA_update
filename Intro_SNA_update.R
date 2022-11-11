@@ -3,10 +3,13 @@
 #Module 5: Social Network Analysis
 #By Chanaya Punyakumpol
 
-#--------------------I. download necessary R packages--------------------
+#download necessary R packages:
 install.packages("tidyverse", "igraph")
 library(tidyverse)
 library(igraph)
+
+#--------------------I. download data--------------------
+#go to https://github.com/chanyaaaa/environmental_dispute for all data
 
 #--------------------II. create the network--------------------
 #two types of network: undirected and directed network
@@ -40,22 +43,22 @@ get.adjacency(pta_edge_net) #function to create adjacency matrix from the graph
 
 pta_adjacency_net <- pta_edge_net %>% get.adjacency() %>%  graph_from_adjacency_matrix(mode = "undirected")
 set.seed(123)
-plot.igraph(pta_adjacency_net)
+plot.igraph(pta_adjacency_net, main = "from adjacecy matrix")
 
 
 #II.B Dirtected Network example:
 #First, we will try to create a network from a small number of citation: 
 #relevant functions: head(); as.matrix(), graph_from_edgelist(); plot.igraph()
 env_sample_data <- as.matrix(head(env_network))
-env_sample_net <- graph_from_edgelist(sample_data)
+env_sample_net <- graph_from_edgelist(env_sample_data)
 set.seed(123)
-plot.igraph(sample_net)
+plot.igraph(env_sample_net)
 
 #create adjacency matrix:
 get.adjacency(env_sample_net)
 env_sample_net <- env_sample_net %>% get.adjacency() %>% graph_from_adjacency_matrix()
 set.seed(123)
-plot.igraph(sample_net)
+plot.igraph(env_sample_net, main = "from adjacency matrix")
 
 
 #--------------------III. network visualization and statistics--------------------
